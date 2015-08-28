@@ -1,3 +1,7 @@
 FileTest.sdf
 ipch/FILETEST-85ccf393/FILETEST-3359604c.ipch
 FileTest/Debug/FileTest.log
+.gitignore 
+Debug/
+FileTest.sdf
+FileTest.opensdf
