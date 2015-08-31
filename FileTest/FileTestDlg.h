@@ -48,4 +48,8 @@ public:
 	int count;
 	// 输入合约编号
 	CEdit m_instrument;
+	// 数据所在文件夹
+	CComboBox m_folder;
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	CButton m_write;
 };

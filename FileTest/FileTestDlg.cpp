@@ -28,6 +28,8 @@ void CFileTestDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_EDIT, m_edit);
 	DDX_Control(pDX, IDC_EDIT1, m_instrument);
+	DDX_Control(pDX, IDC_COMBO1, m_folder);
+	DDX_Control(pDX, IDC_WRITE, m_write);
 }
 
 BEGIN_MESSAGE_MAP(CFileTestDlg, CDialogEx)
@@ -36,6 +38,7 @@ BEGIN_MESSAGE_MAP(CFileTestDlg, CDialogEx)
 	ON_BN_CLICKED(IDCANCEL, &CFileTestDlg::OnBnClickedCancel)
 	ON_BN_CLICKED(IDC_WRITE, &CFileTestDlg::OnBnClickedWrite)
 	ON_BN_CLICKED(IDC_READ, &CFileTestDlg::OnBnClickedRead)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -51,8 +54,15 @@ BOOL CFileTestDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	count = 1;
-
+	m_folder.AddString(_T("分时图"));
+	m_folder.AddString(_T("1分钟K线"));
+	m_folder.AddString(_T("日K线"));
+	m_folder.AddString(_T("临时分时图"));
+	m_folder.AddString(_T("临时1分钟K线"));	
+	m_folder.AddString(_T("快照"));
+	m_folder.SetCurSel(0);
+	//m_folder.SetWindowTextW(_T("分时图"));
+	m_instrument.SetWindowTextW(_T("IF1509"));
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -102,6 +112,7 @@ void CFileTestDlg::OnBnClickedCancel()
 
 void CFileTestDlg::OnBnClickedWrite()
 {
+	SetTimer(1, 3000, NULL);
 	// TODO: 在此添加控件通知处理程序代码
 	/*
 	KObject kd1,kd2;
@@ -128,30 +139,99 @@ void CFileTestDlg::OnBnClickedWrite()
 void CFileTestDlg::OnBnClickedRead()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	CString filepath = _T("data\\k1min\\");
-	CString ins;
 	UpdateData(FALSE);
-	m_instrument.GetWindowTextW(ins);
+	int sel = m_folder.GetCurSel();
+	CString filepath = _T("data\\");
+	CString ins;	
+	m_instrument.GetWindowTextW(ins); 
 	if (ins.IsEmpty()) return;
-	filepath.Append(ins);
-	filepath.Append(_T(".dat"));
-	BOOL bWorking = finder.FindFile(filepath);
-	if (bWorking == false) return;
-	file.Open(filepath, CFile::modeRead);
-	CArchive ar(&file, CArchive::load);
-	KObject *kd1;
-	CString cs("");	
-	while (1) {
-		try {
-			kd1 = (KObject*)ar.ReadObject(RUNTIME_CLASS(KObject));
+	if (sel == 0) {//分时图
+		filepath.Append(_T("timeLine\\"));
+		filepath.Append(ins);
+		filepath.Append(_T(".dat"));
+		BOOL bWorking = finder.FindFile(filepath);
+		if (bWorking == false) return;
+		file.Open(filepath, CFile::modeRead);
+		CArchive ar(&file, CArchive::load);
+		MarketObject *mo;
+		CString cs("时间,均价,最新价,持仓量,成交量,起始持仓\r\n");
+		while (1) {
+			try {
+				mo = (MarketObject *)ar.ReadObject(RUNTIME_CLASS(MarketObject));
+			}
+			catch (...) {
+				break;
+			}
+			cs.Append(mo->getData());
+			cs.Append(_T("\r\n"));
 		}
-		catch (...) {
-			break;
-		}
-		cs.Append( kd1->getData());
-		cs.Append(_T("\r\n"));		
+		m_edit.SetWindowTextW(cs);
+		ar.Close();
+		file.Close();
+		finder.Close();
 	}
-	m_edit.SetWindowTextW(cs);
-	ar.Close();
-	file.Close();
+	else if (sel == 1) {//1分钟K线
+		filepath.Append(_T("k1min\\"));
+		filepath.Append(ins);
+		filepath.Append(_T(".dat"));
+		BOOL bWorking = finder.FindFile(filepath);
+		if (bWorking == false) return;
+		file.Open(filepath, CFile::modeRead);
+		CArchive ar(&file, CArchive::load);
+		KObject *kd1;
+		CString cs("时间,开盘价,收盘价,最高价,最低价\r\n");
+		while (1) {
+			try {
+				kd1 = (KObject*)ar.ReadObject(RUNTIME_CLASS(KObject));
+			}
+			catch (...) {
+				break;
+			}
+			cs.Append(kd1->getData());
+			cs.Append(_T("\r\n"));
+		}
+		m_edit.SetWindowTextW(cs);
+		ar.Close();
+		file.Close();
+		finder.Close();
+	}
+	else if (sel == 2) {//日K线
+		
+	}
+	else if (sel == 3) {//临时分时图
+		filepath.Append(_T("tmp\\timeLine\\"));
+		filepath.Append(ins);
+		filepath.Append(_T(".dat"));
+		BOOL bWorking = finder.FindFile(filepath);
+		if (bWorking == false) return;
+		file.Open(filepath, CFile::modeRead);
+		CArchive ar(&file, CArchive::load);
+		MarketObject *mo;
+		CString cs("时间,均价,最新价,成交量,持仓量,起始成交\r\n");
+		while (1) {
+			try {
+				mo = (MarketObject *)ar.ReadObject(RUNTIME_CLASS(MarketObject));
+			}
+			catch (...) {
+				break;
+			}
+			cs.Append(mo->getData());
+			cs.Append(_T("\r\n"));
+		}
+		m_edit.SetWindowTextW(cs);
+		ar.Close();
+		file.Close();
+		finder.Close();
+	}
+	else if (sel == 4) {//临时1分钟K线
+	}
+	else if (sel == 5) {//快照
+	}	
+}
+
+void CFileTestDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	MessageBox(_T("3秒"));
+	//CDialogEx::OnTimer(nIDEvent);
 }

@@ -53,3 +53,33 @@ CString KObject::getData()
 	data.Append(Util::Double2CString(floorPrice));
 	return data;
 }
+
+//分时图数据序列化
+IMPLEMENT_SERIAL(MarketObject, CObject, 1)
+void MarketObject::Serialize(CArchive & ar)
+{
+	if (ar.IsStoring())
+	{
+		ar << this->time << this->averagePrice << this->lastPrice << this->position << this->turnover << this->openTurnover;
+	}
+	else
+	{
+		ar >> this->time >> this->averagePrice >> this->lastPrice >> this->position >> this->turnover >> this->openTurnover;
+	}
+}
+
+CString MarketObject::getData()
+{
+	CString data = Util::Int2CString(time);
+	data.Append(_T(","));
+	data.Append(Util::Double2CString(averagePrice));
+	data.Append(_T(","));
+	data.Append(Util::Double2CString(lastPrice));
+	data.Append(_T(","));
+	data.Append(Util::Int2CString(position));
+	data.Append(_T(","));
+	data.Append(Util::Int2CString(turnover));
+	data.Append(_T(","));
+	data.Append(Util::Int2CString(openTurnover));
+	return data;
+}
