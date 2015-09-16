@@ -7,6 +7,8 @@
 #include "FileTestDlg.h"
 #include "afxdialogex.h"
 #include "Util.h"
+#include <vector>
+using namespace std;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -30,6 +32,13 @@ void CFileTestDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT1, m_instrument);
 	DDX_Control(pDX, IDC_COMBO1, m_folder);
 	DDX_Control(pDX, IDC_WRITE, m_write);
+	DDX_Control(pDX, IDC_STATIC_STATE, m_state);
+	DDX_Control(pDX, IDC_EDIT2, m_tradeDay);
+	DDX_Control(pDX, IDC_EDIT3, m_openPrice);
+	DDX_Control(pDX, IDC_EDIT4, m_closePrice);
+	DDX_Control(pDX, IDC_EDIT5, m_highest);
+	DDX_Control(pDX, IDC_EDIT6, m_lowest);
+	DDX_Control(pDX, IDC_EDIT7, m_volume);
 }
 
 BEGIN_MESSAGE_MAP(CFileTestDlg, CDialogEx)
@@ -109,31 +118,45 @@ void CFileTestDlg::OnBnClickedCancel()
 	exit(0);
 }
 
+int CFileTestDlg::getIndex()
+{
+	int index = 5;
+	if (!hasOpened) files[index].Open(_T("data\\tmp\\test.dat"), CFile::modeReadWrite | CFile::modeCreate);
+	return index;
+}
 
 void CFileTestDlg::OnBnClickedWrite()
 {
-	SetTimer(1, 3000, NULL);
-	// TODO: 在此添加控件通知处理程序代码
-	/*
-	KObject kd1,kd2;
-	kd1.num = count++;
-	kd1.maxPrice = 3100.2 + count;
-	kd1.floorPrice = 2991.5 + count;
-	kd2.num = count++;
-	kd2.maxPrice = 3100.2 + count;
-	kd2.floorPrice = 2991.5 + count;
-	BOOL bWorking = finder.FindFile(_T("..\\data\\IF1509.dat"));
-	if (bWorking == false) 	//没找到，则创建（覆盖）一个同名文件
-		file.Open(_T("..\\data\\IF1509.dat"), CFile::modeCreate | CFile::modeWrite);
-	else //否则按非覆写模式打开
-	{
-		file.Open(_T("..\\data\\IF1509.dat"), CFile::modeCreate | CFile::modeNoTruncate | CFile::modeWrite );
-		file.SeekToEnd();
-	}
+	CString instrument,o,c,h,l,v;
+	m_instrument.GetWindowTextW(instrument);
+	CString filepath = _T("data\\kday\\");
+	filepath.Append(instrument);
+	filepath.Append(_T(".dat"));
+	CFile file;
+	KdObject kd;
+	m_tradeDay.GetWindowTextW(kd.date);
+	m_openPrice.GetWindowTextW(o);
+	m_closePrice.GetWindowTextW(c);
+	m_highest.GetWindowTextW(h);
+	m_lowest.GetWindowTextW(l);
+	m_volume.GetWindowTextW(v);
+	kd.OpenPrice = Util::CString2Double(o);
+	kd.ClosePrice = Util::CString2Double(c);
+	kd.HighestPrice = Util::CString2Double(h);
+	kd.LowestPrice = Util::CString2Double(l);
+	kd.Volume = Util::CString2Int(v);
+	file.Open(filepath, CFile::modeCreate |CFile::modeNoTruncate | CFile::modeWrite);
+	file.SeekToEnd();
 	CArchive ar(&file, CArchive::store);
-	ar << &kd1<<&kd2;
+	ar << &kd;
 	ar.Close();
-	file.Close();*/
+	file.Close();
+	m_tradeDay.SetWindowTextW(_T(""));
+	m_openPrice.SetWindowTextW(_T(""));
+	m_closePrice.SetWindowTextW(_T(""));
+	m_highest.SetWindowTextW(_T(""));
+	m_lowest.SetWindowTextW(_T(""));
+	m_volume.SetWindowTextW(_T(""));
 }
 
 void CFileTestDlg::OnBnClickedRead()
@@ -151,8 +174,8 @@ void CFileTestDlg::OnBnClickedRead()
 		filepath.Append(_T(".dat"));
 		BOOL bWorking = finder.FindFile(filepath);
 		if (bWorking == false) return;
-		file.Open(filepath, CFile::modeRead);
-		CArchive ar(&file, CArchive::load);
+		files[0].Open(filepath, CFile::modeRead);
+		CArchive ar(&files[0], CArchive::load);
 		MarketObject *mo;
 		CString cs("时间,均价,最新价,持仓量,成交量,起始持仓\r\n");
 		while (1) {
@@ -162,12 +185,22 @@ void CFileTestDlg::OnBnClickedRead()
 			catch (...) {
 				break;
 			}
-			cs.Append(mo->getData());
+			cs.Append(Util::Int2CString(mo->time));
+			cs.Append(_T(","));
+			cs.Append(Util::Double2CString(mo->averagePrice));
+			cs.Append(_T(","));
+			cs.Append(Util::Double2CString(mo->lastPrice));
+			cs.Append(_T(","));
+			cs.Append(Util::Int2CString(mo->position));
+			cs.Append(_T(","));
+			cs.Append(Util::Int2CString(mo->turnover));
+			cs.Append(_T(","));
+			cs.Append(Util::Int2CString(mo->openTurnover));
 			cs.Append(_T("\r\n"));
 		}
 		m_edit.SetWindowTextW(cs);
 		ar.Close();
-		file.Close();
+		files[0].Close();
 		finder.Close();
 	}
 	else if (sel == 1) {//1分钟K线
@@ -176,8 +209,8 @@ void CFileTestDlg::OnBnClickedRead()
 		filepath.Append(_T(".dat"));
 		BOOL bWorking = finder.FindFile(filepath);
 		if (bWorking == false) return;
-		file.Open(filepath, CFile::modeRead);
-		CArchive ar(&file, CArchive::load);
+		files[0].Open(filepath, CFile::modeRead);
+		CArchive ar(&files[0], CArchive::load);
 		KObject *kd1;
 		CString cs("时间,开盘价,收盘价,最高价,最低价\r\n");
 		while (1) {
@@ -192,11 +225,33 @@ void CFileTestDlg::OnBnClickedRead()
 		}
 		m_edit.SetWindowTextW(cs);
 		ar.Close();
-		file.Close();
+		files[0].Close();
 		finder.Close();
 	}
 	else if (sel == 2) {//日K线
-		
+		filepath.Append(_T("kday\\"));
+		filepath.Append(ins);
+		filepath.Append(_T(".dat"));
+		BOOL bWorking = finder.FindFile(filepath);
+		if (bWorking == false) return;
+		files[0].Open(filepath, CFile::modeRead);
+		CArchive ar(&files[0], CArchive::load);
+		KdObject *kd;
+		CString cs("日期,开盘价,收盘价,最高价,最低价,成交量\r\n");
+		while (1) {
+			try {
+				kd = (KdObject*)ar.ReadObject(RUNTIME_CLASS(KdObject));
+			}
+			catch (...) {
+				break;
+			}
+			cs.Append(getData(kd));
+			cs.Append(_T("\r\n"));
+		}
+		m_edit.SetWindowTextW(cs);
+		ar.Close();
+		files[0].Close();
+		finder.Close();
 	}
 	else if (sel == 3) {//临时分时图
 		filepath.Append(_T("tmp\\timeLine\\"));
@@ -204,8 +259,8 @@ void CFileTestDlg::OnBnClickedRead()
 		filepath.Append(_T(".dat"));
 		BOOL bWorking = finder.FindFile(filepath);
 		if (bWorking == false) return;
-		file.Open(filepath, CFile::modeRead);
-		CArchive ar(&file, CArchive::load);
+		files[0].Open(filepath, CFile::modeRead);
+		CArchive ar(&files[0], CArchive::load);
 		MarketObject *mo;
 		CString cs("时间,均价,最新价,成交量,持仓量,起始成交\r\n");
 		while (1) {
@@ -215,19 +270,81 @@ void CFileTestDlg::OnBnClickedRead()
 			catch (...) {
 				break;
 			}
-			cs.Append(mo->getData());
+			cs.Append(Util::Int2CString(mo->time));
+			cs.Append(_T(","));
+			cs.Append(Util::Double2CString(mo->averagePrice));
+			cs.Append(_T(","));
+			cs.Append(Util::Double2CString(mo->lastPrice));
+			cs.Append(_T(","));
+			cs.Append(Util::Int2CString(mo->position));
+			cs.Append(_T(","));
+			cs.Append(Util::Int2CString(mo->turnover));
+			cs.Append(_T(","));
+			cs.Append(Util::Int2CString(mo->openTurnover));
 			cs.Append(_T("\r\n"));
 		}
 		m_edit.SetWindowTextW(cs);
 		ar.Close();
-		file.Close();
+		files[0].Close();
 		finder.Close();
 	}
 	else if (sel == 4) {//临时1分钟K线
 	}
 	else if (sel == 5) {//快照
+		filepath.Append(_T("tmp\\snapshot\\"));
+		filepath.Append(ins);
+		filepath.Append(_T(".dat"));
+		BOOL bWorking = finder.FindFile(filepath);
+		if (bWorking == false) return;
+		files[0].Open(filepath, CFile::modeRead);
+		CArchive ar(&files[0], CArchive::load);
+		CString instrument;
+		CUstpFtdcDepthMarketDataField market;
+		/*
+		ar >> instrument >> market.LastPrice >> market.PreClosePrice
+			>> market.AskPrice1 >> market.AskVolume1
+			>> market.BidPrice1 >> market.BidVolume1
+			>> market.Volume >> market.OpenInterest
+			>> market.UpperLimitPrice >> market.LowerLimitPrice
+			>> market.OpenPrice >> market.HighestPrice
+			>> market.LowestPrice;
+		CString showData = _T("合约 最新价 昨收盘 买一价 买一量 卖一价 卖一量 成交量 持仓 涨停价 跌停价 开盘价 最高价 最低价\r\n");
+		showData.Append(instrument);
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.LastPrice));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.PreClosePrice));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.AskPrice1));
+		showData.Append(_T(" "));
+		showData.Append(Util::Int2CString(market.AskVolume1));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.BidPrice1));
+		showData.Append(_T(" "));
+		showData.Append(Util::Int2CString(market.BidVolume1));
+		showData.Append(_T(" "));
+		showData.Append(Util::Int2CString(market.Volume));
+		showData.Append(_T(" "));
+		showData.Append(Util::Int2CString(market.OpenInterest));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.UpperLimitPrice));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.LowerLimitPrice));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.OpenPrice));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.HighestPrice));
+		showData.Append(_T(" "));
+		showData.Append(Util::Double2CString(market.LowestPrice));
+		
+		m_edit.SetWindowTextW(showData);*/
+		ar.Close();
+		files[0].Close();
+		finder.Close();
 	}	
 }
+
+
 
 void CFileTestDlg::OnTimer(UINT_PTR nIDEvent)
 {

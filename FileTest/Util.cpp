@@ -1,6 +1,18 @@
 #include "stdafx.h"
 #include "Util.h"
 
+char * Util::CString2Char(CString cs) {
+	int len = WideCharToMultiByte(CP_ACP, 0, cs, -1, NULL, 0, NULL, NULL);
+	char *ptxtTemp = new char[len + 1];
+	WideCharToMultiByte(CP_ACP, 0, cs, -1, ptxtTemp, len, NULL, NULL);
+	return ptxtTemp;
+}
+
+char Util::CString2SingleChar(CString cs)
+{
+	return CString2Char(cs)[0];
+}
+
 CString Util::Char2CString(char * c)
 {
 	CString cs = (CString)c;
@@ -25,6 +37,18 @@ char * Util::Int2Char(int n)
 	char *p = new char[100];
 	return _itoa(n, p, 10);
 }
+
+double Util::CString2Double(CString cs)
+{
+	return atof(Util::CString2Char(cs));
+}
+
+int Util::CString2Int(CString cs)
+{
+	char *c = CString2Char(cs);
+	return atoi(c);
+}
+
 
 //保存交易数据的类，序列化函数实现
 IMPLEMENT_SERIAL(KObject, CObject, 1)
@@ -54,6 +78,35 @@ CString KObject::getData()
 	return data;
 }
 
+//日K线数据序列化
+IMPLEMENT_SERIAL(KdObject, CObject, 1)
+void KdObject::Serialize(CArchive & ar)
+{
+	if (ar.IsStoring())
+	{
+		ar << this->date << this->OpenPrice << this->ClosePrice << this->HighestPrice << this->LowestPrice <<this->Volume;
+	}
+	else
+	{
+		ar >> this->date >> this->OpenPrice >> this->ClosePrice >> this->HighestPrice >> this->LowestPrice >> this->Volume;
+	}
+}
+CString getData(KdObject *kd)
+{
+	CString data = kd->date;
+	data.Append(_T(","));
+	data.Append(Util::Double2CString(kd->OpenPrice));
+	data.Append(_T(","));
+	data.Append(Util::Double2CString(kd->ClosePrice));
+	data.Append(_T(","));
+	data.Append(Util::Double2CString(kd->HighestPrice));
+	data.Append(_T(","));
+	data.Append(Util::Double2CString(kd->LowestPrice));
+	data.Append(_T(","));
+	data.Append(Util::Int2CString(kd->Volume));
+	return data;
+}
+
 //分时图数据序列化
 IMPLEMENT_SERIAL(MarketObject, CObject, 1)
 void MarketObject::Serialize(CArchive & ar)
@@ -66,20 +119,4 @@ void MarketObject::Serialize(CArchive & ar)
 	{
 		ar >> this->time >> this->averagePrice >> this->lastPrice >> this->position >> this->turnover >> this->openTurnover;
 	}
-}
-
-CString MarketObject::getData()
-{
-	CString data = Util::Int2CString(time);
-	data.Append(_T(","));
-	data.Append(Util::Double2CString(averagePrice));
-	data.Append(_T(","));
-	data.Append(Util::Double2CString(lastPrice));
-	data.Append(_T(","));
-	data.Append(Util::Int2CString(position));
-	data.Append(_T(","));
-	data.Append(Util::Int2CString(turnover));
-	data.Append(_T(","));
-	data.Append(Util::Int2CString(openTurnover));
-	return data;
 }

@@ -40,10 +40,9 @@ public:
 	//寻找文件
 	CFileFind finder;
 	//文件对象
-	CFile file;
-	//是否已经登录
-	bool hasLogined;
-	bool checkLogin(CString today);
+	CFile files[10];
+	bool hasOpened = false;
+	int getIndex();
 
 	int count;
 	// 输入合约编号
@@ -52,4 +51,17 @@ public:
 	CComboBox m_folder;
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	CButton m_write;
+	CStatic m_state;
+	// 交易日期
+	CEdit m_tradeDay;
+	// 开盘价
+	CEdit m_openPrice;
+	// 收盘价
+	CEdit m_closePrice;
+	// 最高价
+	CEdit m_highest;
+	// 最低价
+	CEdit m_lowest;
+	// 成交量
+	CEdit m_volume;
 };

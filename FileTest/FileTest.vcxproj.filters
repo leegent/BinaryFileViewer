@@ -36,6 +36,12 @@
     <ClInclude Include="Util.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="USTPFtdcUserApiDataType.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="USTPFtdcUserApiStruct.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FileTest.cpp">

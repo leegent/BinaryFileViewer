@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include "USTPFtdcUserApiStruct.h"
 #include<cstring>
 
 class Util {
@@ -8,6 +9,10 @@ public:
 	static CString Double2CString(double d);
 	static CString Int2CString(int n);
 	static char *Int2Char(int n);
+	static double CString2Double(CString cs);
+	static int CString2Int(CString cs);
+	static char *CString2Char(CString cs);
+	static char CString2SingleChar(CString cs);
 };
 
 class KObject :public CObject
@@ -22,6 +27,20 @@ public:
 	//序列化函数
 	virtual void Serialize(CArchive& ar);
 	CString getData();
+};
+
+class KdObject :public CObject
+{
+	DECLARE_SERIAL(KdObject)
+public:
+	CString date;
+	double OpenPrice;
+	double ClosePrice;
+	double HighestPrice;
+	double LowestPrice;
+	int Volume;
+	//序列化函数
+	virtual void Serialize(CArchive& ar);
 };
 
 class MarketObject :public CObject
@@ -42,5 +61,6 @@ public:
 	int openTurnover;
 	//序列化函数
 	virtual void Serialize(CArchive& ar);
-	CString getData();
 };
+
+CString getData(KdObject *kd);
